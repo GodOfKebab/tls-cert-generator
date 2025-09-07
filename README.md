@@ -1,5 +1,9 @@
 # Certificate Manager
 
+![](https://badgen.net/docker/pulls/godofkebab/certificate-manager)
+![](https://badgen.net/docker/size/godofkebab/certificate-manager)
+
+
 This repository provides a simple tool with Docker-support to generate TLS certificates for your system.  
 It automatically creates a self-signed **Root CA** and issues **server certificates** for hostnames and IP addresses you specify (or all addresses/hostnames discovered on the machine).
 It works on **macOS** and **Linux**, and can run locally or in Docker.
