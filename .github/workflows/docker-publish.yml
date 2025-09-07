@@ -6,7 +6,7 @@ on:
       image_tag:
         description: "Docker image tag (e.g. v1.0.0)"
         required: true
-        default: "latest"
+        default: "v1.0.0"
 
 jobs:
   docker:
@@ -35,5 +35,6 @@ jobs:
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
+          repository: ${{ secrets.DOCKERHUB_USERNAME }}/certificate-manager
           short-description: ${{ github.event.repository.description }}
           readme-filepath: ./README.md
