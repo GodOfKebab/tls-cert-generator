@@ -70,6 +70,8 @@ Certificates will be created in `./certs`.
 
 You can pull and run the prebuilt image without cloning the repo:
 
+Known issues: Dockerized method is not good at detecting the interfaces of your system (only matters if you run the commands like all, etc.).
+
 ```bash
 docker run --rm \
   -v $(pwd)/certs:/app/certs \
@@ -90,6 +92,8 @@ Certificates will be written into `./certs`.
 ### 3. Building and Running the Docker Image Yourself
 
 Clone the repo, build the Docker image, and run it:
+
+Known issues: Dockerized method is not good at detecting the interfaces of your system (only matters if you run the commands like all, etc.).
 
 ```bash
 git clone https://github.com/GodOfKebab/certificate-manager.git
