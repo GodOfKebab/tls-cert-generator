@@ -14,4 +14,4 @@ services:
       ORGANIZATIONAL_UNIT: "XXX"
       ROOT_CN: "certificate-manager@XXX"
     network_mode: "host"   # use the host network to get public IPs/hostnames
-    command: [ "all", "127.0.0.1", "localhost" ]  # use comma-seperated commands/IPs/hostnames/FQDNs to create TLS certificates
+    command: [ "all", "1.2.3.4", "example.com" ]  # use comma-seperated commands/IPs/hostnames/FQDNs to create TLS certificates
