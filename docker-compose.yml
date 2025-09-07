@@ -1,0 +1,17 @@
+services:
+
+  certificate-manager:
+    container_name: certificate-manager-cnt
+    build: .
+    volumes:
+      - ./certs:/app/certs
+    environment:
+      # TLS Certificate settings...
+      COUNTRY: "XX"
+      STATE: "XXX"
+      LOCALITY: "XXX"
+      ORGANIZATION: "XXX"
+      ORGANIZATIONAL_UNIT: "XXX"
+      ROOT_CN: "certificate-manager@XXX"
+    network_mode: "host"   # use the host network to get public IPs/hostnames
+    command: [ "all", "127.0.0.1", "localhost" ]  # use comma-seperated commands/IPs/hostnames/FQDNs to create TLS certificates
