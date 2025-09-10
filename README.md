@@ -81,7 +81,7 @@ docker run --rm \
   -e ORGANIZATION="God Of Kebab Labs" \
   -e ORGANIZATIONAL_UNIT="God Of Kebab's Guide to the WWW" \
   -e ROOT_CN="certificate-manager@kebabnet" \
-  godofkebab/certificate-manager:latest \
+  godofkebab/certificate-manager \
   all 1.2.3.4 example.com
 ```
 
