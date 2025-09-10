@@ -83,6 +83,31 @@ docker run --rm \
   -e ROOT_CN="certificate-manager@kebabnet" \
   godofkebab/certificate-manager \
   all 1.2.3.4 example.com
+# Unable to find image 'godofkebab/certificate-manager:latest' locally
+# latest: Pulling from godofkebab/certificate-manager
+# 91e73aa2f352: Pull complete
+# c00e31457cc1: Pull complete
+# 37a0e844995d: Pull complete
+# Digest: sha256:...
+# Status: Downloaded newer image for godofkebab/certificate-manager:latest
+# Generating key for rootCA ...
+#     certs/root/rootCA.key
+#     Done.
+# Generating cert for rootCA ...
+#     certs/root/rootCA.crt
+#     Done.
+# Generating cert/key for XX.XX.XX.XX ...
+#     Generated key at certs/servers/XX.XX.XX.XX/key.pem
+#     Generated cert at certs/servers/XX.XX.XX.XX/cert.pem
+# tree $(pwd)/certs
+# └── certs
+#     ├── root
+#     │   ├── rootCA.crt
+#     │   └── rootCA.key
+#     └── servers
+#         └── XX.XX.XX.XX
+#             ├── cert.pem
+#             └── key.pem
 ```
 
 Certificates will be written into `./certs`.
