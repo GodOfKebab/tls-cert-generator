@@ -34,8 +34,8 @@ jobs:
           push: true
           platforms: linux/amd64,linux/arm64,linux/arm/v7
           tags: |
-            ${{ secrets.DOCKERHUB_USERNAME }}/certificate-manager:latest
             ${{ secrets.DOCKERHUB_USERNAME }}/certificate-manager:${{ github.event.inputs.image_tag }}
+            ${{ secrets.DOCKERHUB_USERNAME }}/certificate-manager:latest
 
       - name: Update Docker Hub description
         uses: peter-evans/dockerhub-description@v4
