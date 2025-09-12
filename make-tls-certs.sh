@@ -99,8 +99,7 @@ if [ $FORCE -eq 1 ] || [ ! -f "$CERTS_DIR/root/rootCA.crt" ]; then
         -key "$CERTS_DIR/root/rootCA.key" \
         -out "$CERTS_DIR/root/rootCA.crt" \
         -subj "/C=$COUNTRY/ST=$STATE/L=$LOCALITY/O=$ORGANIZATION CA/OU=$ORGANIZATIONAL_UNIT/CN=$ROOT_CN" \
-        -days 800 \
-        >/dev/null 2>&1
+        -days 800
     echo "    ✅ $CERTS_DIR/root/rootCA.crt"
 else
     echo "🔎 Detected cert for rootCA at $CERTS_DIR/root/rootCA.crt. Use -f option to override. Skipping..."
@@ -166,8 +165,7 @@ generate_server_cert_key() {
         openssl req -new \
             -key "$CERTS_DIR/servers/$server/key.pem" \
             -out "$CERTS_DIR/servers/$server.csr" \
-            -subj "/C=$COUNTRY/ST=$STATE/L=$LOCALITY/O=$ORGANIZATION certificate/OU=$ORGANIZATIONAL_UNIT/CN=$server" \
-            >/dev/null 2>&1
+            -subj "/C=$COUNTRY/ST=$STATE/L=$LOCALITY/O=$ORGANIZATION certificate/OU=$ORGANIZATIONAL_UNIT/CN=$server"
 
         # Configure extensions so browsers don't yell
         cat > "$CERTS_DIR/servers/$server.ext" << EOF
