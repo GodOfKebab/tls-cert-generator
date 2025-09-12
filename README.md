@@ -65,11 +65,11 @@ export ORGANIZATION="God Of Kebab Labs"
 export ORGANIZATIONAL_UNIT="God Of Kebab's Guide to the WWW"
 export ROOT_CN="certificate-manager@kebabnet"
 
-curl -sSL https://raw.githubusercontent.com/GodOfKebab/certificate-manager/refs/heads/main/make-tls-certs.sh | sh -s \
+curl -sSL https://raw.githubusercontent.com/GodOfKebab/certificate-manager/refs/heads/main/make-tls-certs.sh | sh -s -- \
 all 1.2.3.4 example.com
 
 # OR use CLI arguments
-curl -sSL https://raw.githubusercontent.com/GodOfKebab/certificate-manager/refs/heads/main/make-tls-certs.sh | sh -s \
+curl -sSL https://raw.githubusercontent.com/GodOfKebab/certificate-manager/refs/heads/main/make-tls-certs.sh | sh -s -- \
 -f -o another-certs-folder \
 --country "TR" \
 --state "Istanbul" \
