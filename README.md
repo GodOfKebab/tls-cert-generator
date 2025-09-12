@@ -73,11 +73,11 @@ export ORGANIZATIONAL_UNIT="God Of Kebab's Guide to the WWW"
 export ROOT_CN="certificate-manager@kebabnet"
 
 # Note: Interactive prompts doesn't work when the script is piped into sh 
-curl -sSL https://raw.githubusercontent.com/GodOfKebab/tls-cert-generator/refs/heads/main/tls-cert-generator.sh | sh -s -- \
+wget -qO- https://raw.githubusercontent.com/GodOfKebab/tls-cert-generator/refs/heads/main/tls-cert-generator.sh | sh -s -- \
 all 1.2.3.4 example.com
 
 # OR use CLI arguments
-curl -sSL https://raw.githubusercontent.com/GodOfKebab/tls-cert-generator/refs/heads/main/tls-cert-generator.sh | sh -s -- \
+wget -qO- https://raw.githubusercontent.com/GodOfKebab/tls-cert-generator/refs/heads/main/tls-cert-generator.sh | sh -s -- \
 -f -o another-certs-folder \
 --country "TR" \
 --state "Istanbul" \
@@ -88,7 +88,7 @@ curl -sSL https://raw.githubusercontent.com/GodOfKebab/tls-cert-generator/refs/h
 all 1.2.3.4 example.com
 
 # OR save the file before running
-# curl https://raw.githubusercontent.com/GodOfKebab/tls-cert-generator/refs/heads/main/tls-cert-generator.sh -o tls-cert-generator.sh
+# wget https://raw.githubusercontent.com/GodOfKebab/tls-cert-generator/refs/heads/main/tls-cert-generator.sh -O tls-cert-generator.sh
 # sh tls-cert-generator.sh all 1.2.3.4 example.com
 ```
 
