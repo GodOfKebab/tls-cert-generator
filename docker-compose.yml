@@ -1,7 +1,7 @@
 services:
 
-  certificate-manager:
-    container_name: certificate-manager-cnt
+  tls-cert-generator:
+    container_name: tls-cert-generator-cnt
     build: .
     volumes:
       - ./certs:/app/certs
