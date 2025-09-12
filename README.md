@@ -50,7 +50,7 @@ You can provide them in three ways (priority order):
 | `--locality` | `LOCALITY`            | City/locality                       | `--locality Fatih`                       |
 | `--org`      | `ORGANIZATION`        | Organization name                   | `--org "God Of Kebab Labs"`              |
 | `--ou`       | `ORGANIZATIONAL_UNIT` | Department/unit                     | `--ou "God Of Kebab's Guide to the WWW"` |
-| `--cn`       | `ROOT_CN`             | Root CA Common Name                 | `--cn certificate-manager@kebabnet`      |
+| `--cn`       | `ROOT_CN`             | Root CA Common Name                 | `--cn tls-cert-generator@kebabnet`      |
 
 > Note: Interactive prompts doesn't work when the script is piped into sh 
 
@@ -70,7 +70,7 @@ export STATE="Istanbul"
 export LOCALITY="Fatih"
 export ORGANIZATION="God Of Kebab Labs"
 export ORGANIZATIONAL_UNIT="God Of Kebab's Guide to the WWW"
-export ROOT_CN="certificate-manager@kebabnet"
+export ROOT_CN="tls-cert-generator@kebabnet"
 
 # Note: Interactive prompts doesn't work when the script is piped into sh 
 wget -qO- https://raw.githubusercontent.com/GodOfKebab/tls-cert-generator/refs/heads/main/tls-cert-generator.sh | sh -s -- \
@@ -84,7 +84,7 @@ wget -qO- https://raw.githubusercontent.com/GodOfKebab/tls-cert-generator/refs/h
 --locality "Fatih" \
 --org "God Of Kebab Labs" \
 --ou "God Of Kebab's Guide to the WWW" \
---cn "certificate-manager@kebabnet" \
+--cn "tls-cert-generator@kebabnet" \
 all 1.2.3.4 example.com
 
 # OR save the file before running
@@ -110,7 +110,7 @@ docker run --rm \
   -e LOCALITY="Fatih" \
   -e ORGANIZATION="God Of Kebab Labs" \
   -e ORGANIZATIONAL_UNIT="God Of Kebab's Guide to the WWW" \
-  -e ROOT_CN="certificate-manager@kebabnet" \
+  -e ROOT_CN="tls-cert-generator@kebabnet" \
   godofkebab/tls-cert-generator \
   all 1.2.3.4 example.com
 ```
@@ -137,7 +137,7 @@ docker run --rm \
   -e LOCALITY="Fatih" \
   -e ORGANIZATION="God Of Kebab Labs" \
   -e ORGANIZATIONAL_UNIT="God Of Kebab's Guide to the WWW" \
-  -e ROOT_CN="certificate-manager@kebabnet" \
+  -e ROOT_CN="tls-cert-generator@kebabnet" \
   tls-cert-generator \
   all 1.2.3.4 example.com
 ```
