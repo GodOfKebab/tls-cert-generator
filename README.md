@@ -1,7 +1,7 @@
-# Certificate Manager
+# tls-cert-generator: TLS Certificate Generator
 
-![](https://badgen.net/docker/pulls/godofkebab/certificate-manager)
-![](https://badgen.net/docker/size/godofkebab/certificate-manager)
+![](https://badgen.net/docker/pulls/godofkebab/tls-cert-generator)
+![](https://badgen.net/docker/size/godofkebab/tls-cert-generator)
 
 This repository provides a simple tool with Docker support to generate TLS certificates for your system.
 It automatically creates a self-signed **Root CA** and issues **server certificates** for hostnames and IP addresses you specify (or all addresses/hostnames discovered on the machine).
@@ -31,21 +31,28 @@ It works on **macOS** and **Linux**, and can run locally or in Docker.
 
 ---
 
-## Environment Variables / CLI Arguments
+## Configuration
 
-| Environment Variable / Arg         | Description                                                                                                      |
-|------------------------------------|------------------------------------------------------------------------------------------------------------------|
-| `-f`                               | **Optional:** Force overwrite existing keys/certs (default `false`)                                              |
-| `-o <dir>`                         | **Optional:** Output directory for certificates (default `./certs`)                                              |
-| `COUNTRY` / `-country`             | **TLS Field:** 2-letter country code (e.g., `TR`)                                                                |
-| `STATE` / `-state`                 | **TLS Field:** State or province (e.g., `Istanbul`)                                                              |
-| `LOCALITY` / `-locality`           | **TLS Field:** City/locality (e.g., `Fatih`)                                                                     |
-| `ORGANIZATION` / `-org`            | **TLS Field:** Organization name (e.g., `God Of Kebab Labs`)                                                     |
-| `ORGANIZATIONAL_UNIT` / `-orgunit` | **TLS Field:** Department/unit (e.g., `God Of Kebab's Guide to the WWW`)                                         |
-| `ROOT_CN` / `-rootcn`              | **TLS Field:** Common Name for the Root CA (e.g., `God Of Kebab Labs Root CA` or `certificate-manager@kebabnet`) |
+The script needs a set of certificate identity fields.
+You can provide them in three ways (priority order):
+1. CLI arguments (--country, --state, etc.)
+2. Environment variables (COUNTRY, STATE, etc.)
+3. Interactive prompt (script will ask if missing)
 
+## Options
 
-> All TLS fields must be provided either as environment variables or as CLI arguments. The script will error out if any field is missing from both sources.
+| CLI Flag     | Env Var               | Description                         | Example                                  |
+|--------------|-----------------------|-------------------------------------|------------------------------------------|
+| `-f`         | N/A                   | Flag for overwriting existing files | `-f`                                     |
+| `-o`         | N/A                   | Output directory for certs          | `-o ./my-certs`                          |
+| `--country`  | `COUNTRY`             | 2-letter country code               | `--country TR`                           |
+| `--state`    | `STATE`               | State or province                   | `--state Istanbul`                       |
+| `--locality` | `LOCALITY`            | City/locality                       | `--locality Fatih`                       |
+| `--org`      | `ORGANIZATION`        | Organization name                   | `--org "God Of Kebab Labs"`              |
+| `--ou`       | `ORGANIZATIONAL_UNIT` | Department/unit                     | `--ou "God Of Kebab's Guide to the WWW"` |
+| `--cn`       | `ROOT_CN`             | Root CA Common Name                 | `--cn certificate-manager@kebabnet`      |
+
+> Note: Interactive prompts doesn't work when the script is piped into sh 
 
 ---
 
@@ -65,11 +72,12 @@ export ORGANIZATION="God Of Kebab Labs"
 export ORGANIZATIONAL_UNIT="God Of Kebab's Guide to the WWW"
 export ROOT_CN="certificate-manager@kebabnet"
 
-curl -sSL https://raw.githubusercontent.com/GodOfKebab/certificate-manager/refs/heads/main/make-tls-certs.sh | sh -s -- \
+# Note: Interactive prompts doesn't work when the script is piped into sh 
+curl -sSL https://raw.githubusercontent.com/GodOfKebab/tls-cert-generator/refs/heads/main/tls-cert-generator.sh | sh -s -- \
 all 1.2.3.4 example.com
 
 # OR use CLI arguments
-curl -sSL https://raw.githubusercontent.com/GodOfKebab/certificate-manager/refs/heads/main/make-tls-certs.sh | sh -s -- \
+curl -sSL https://raw.githubusercontent.com/GodOfKebab/tls-cert-generator/refs/heads/main/tls-cert-generator.sh | sh -s -- \
 -f -o another-certs-folder \
 --country "TR" \
 --state "Istanbul" \
@@ -80,8 +88,8 @@ curl -sSL https://raw.githubusercontent.com/GodOfKebab/certificate-manager/refs/
 all 1.2.3.4 example.com
 
 # OR save the file before running
-# curl https://raw.githubusercontent.com/GodOfKebab/certificate-manager/refs/heads/main/make-tls-certs.sh -o make-tls-certs.sh
-# sh make-tls-certs.sh all 1.2.3.4 example.com
+# curl https://raw.githubusercontent.com/GodOfKebab/tls-cert-generator/refs/heads/main/tls-cert-generator.sh -o tls-cert-generator.sh
+# sh tls-cert-generator.sh all 1.2.3.4 example.com
 ```
 
 Certificates will be created in `./certs`.
@@ -103,7 +111,7 @@ docker run --rm \
   -e ORGANIZATION="God Of Kebab Labs" \
   -e ORGANIZATIONAL_UNIT="God Of Kebab's Guide to the WWW" \
   -e ROOT_CN="certificate-manager@kebabnet" \
-  godofkebab/certificate-manager \
+  godofkebab/tls-cert-generator \
   all 1.2.3.4 example.com -f -o /app/certs
 ```
 
@@ -118,10 +126,10 @@ Clone the repo, build the Docker image, and run it:
 Known issues: Dockerized method is not good at detecting the interfaces of your system (only matters if you run the commands like all, etc.).
 
 ```bash
-git clone https://github.com/GodOfKebab/certificate-manager.git
-cd certificate-manager
+git clone https://github.com/GodOfKebab/tls-cert-generator.git
+cd tls-cert-generator
 
-docker build -t certificate-manager .
+docker build -t tls-cert-generator .
 docker run --rm \
   -v $(pwd)/certs:/app/certs \
   -e COUNTRY="TR" \
@@ -130,7 +138,7 @@ docker run --rm \
   -e ORGANIZATION="God Of Kebab Labs" \
   -e ORGANIZATIONAL_UNIT="God Of Kebab's Guide to the WWW" \
   -e ROOT_CN="certificate-manager@kebabnet" \
-  certificate-manager \
+  tls-cert-generator \
   all 1.2.3.4 example.com
 ```
 
