@@ -112,7 +112,7 @@ docker run --rm \
   -e ORGANIZATIONAL_UNIT="God Of Kebab's Guide to the WWW" \
   -e ROOT_CN="certificate-manager@kebabnet" \
   godofkebab/tls-cert-generator \
-  all 1.2.3.4 example.com -f -o /app/certs
+  all 1.2.3.4 example.com
 ```
 
 Certificates will be written into `./certs` (or whatever you set with `-o`).
