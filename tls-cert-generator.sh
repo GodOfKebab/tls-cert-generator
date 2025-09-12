@@ -80,12 +80,55 @@ echo "   ORGANIZATIONAL_UNIT (--ou)       = ${ORGANIZATIONAL_UNIT}"
 echo "   ROOT_CN             (--cn)       = ${ROOT_CN}"
 echo
 
-# Detect OpenSSL flavor and set correct flag
-OPENSSL_REQ_NOENC_FLAG="-noenc"
-if openssl version 2>/dev/null | grep -qi "LibreSSL"; then
-    # macOS (LibreSSL doesn't support -noenc)
+# Detect OpenSSL / LibreSSL and choose the correct "no-encrypt" flag
+OPENSSL_REQ_NOENC_FLAG="-nodes"  # safe default for OpenSSL 1.1.x and LibreSSL
+
+OPENSSL_VER_OUT=$(openssl version 2>/dev/null || true)
+
+if printf '%s\n' "$OPENSSL_VER_OUT" | grep -qi 'LibreSSL'; then
+    # LibreSSL: use -nodes
     OPENSSL_REQ_NOENC_FLAG="-nodes"
+else
+    # Try to extract the numeric version token (e.g. "1.1.1w" -> "1.1.1", "3.0.2" -> "3.0.2")
+    ver=$(printf '%s\n' "$OPENSSL_VER_OUT" | awk '{print $2}' | sed 's/[^0-9.].*$//')
+    major=$(printf '%s\n' "$ver" | cut -d. -f1)
+
+    # If we can parse a major version and it's 3 or greater, use -noenc (OpenSSL 3+)
+    if [ -n "$major" ]; then
+        # guard arithmetic test in case major is non-numeric
+        case "$major" in
+            ''|*[!0-9]*)
+                OPENSSL_REQ_NOENC_FLAG="-nodes" ;;
+            *)
+                if [ "$major" -ge 3 ]; then
+                    OPENSSL_REQ_NOENC_FLAG="-noenc"
+                else
+                    OPENSSL_REQ_NOENC_FLAG="-nodes"
+                fi
+                ;;
+        esac
+    else
+        # fallback
+        OPENSSL_REQ_NOENC_FLAG="-nodes"
+    fi
 fi
+
+run_or_fail() {
+    cmd="$1"
+    msg="$2"
+
+    if output=$(eval "$cmd" 2>&1); then
+        echo "    ✅ Success: $msg"
+    else
+        echo "    ❌ Failed: $msg"
+        echo "---- Command ----"
+        echo "$cmd"
+        echo "---- Output ----"
+        echo "$output"
+        echo "------------------------"
+        exit 1
+    fi
+}
 
 # Ensure root and servers directories
 mkdir -p "$CERTS_DIR/root"
@@ -93,22 +136,23 @@ mkdir -p "$CERTS_DIR/root"
 # Root CA key
 if [ $FORCE -eq 1 ] || [ ! -f "$CERTS_DIR/root/rootCA.key" ]; then
     echo "⏳ Generating key for rootCA ..."
-    openssl genrsa -out "$CERTS_DIR/root/rootCA.key" 4096 >/dev/null 2>&1
-    echo "    ✅ $CERTS_DIR/root/rootCA.key"
-else
+    run_or_fail \
+        "openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:4096 -out \"$CERTS_DIR/root/rootCA.key\"" \
+        "$CERTS_DIR/root/rootCA.key"
+  else
     echo "🔎 Detected key for rootCA at $CERTS_DIR/root/rootCA.key. Use -f option to override. Skipping..."
 fi
 
 # Root CA cert
 if [ $FORCE -eq 1 ] || [ ! -f "$CERTS_DIR/root/rootCA.crt" ]; then
     echo "⏳ Generating cert for rootCA ..."
-    # Generate the Root Certificate.
-    openssl req -x509 -sha256 -new $OPENSSL_REQ_NOENC_FLAG \
-        -key "$CERTS_DIR/root/rootCA.key" \
-        -out "$CERTS_DIR/root/rootCA.crt" \
-        -subj "/C=$COUNTRY/ST=$STATE/L=$LOCALITY/O=$ORGANIZATION CA/OU=$ORGANIZATIONAL_UNIT/CN=$ROOT_CN" \
-        -days 800
-    echo "    ✅ $CERTS_DIR/root/rootCA.crt"
+    run_or_fail \
+        "openssl req -x509 -sha256 -new $OPENSSL_REQ_NOENC_FLAG \
+             -key \"$CERTS_DIR/root/rootCA.key\" \
+             -out \"$CERTS_DIR/root/rootCA.crt\" \
+             -subj \"/C=$COUNTRY/ST=$STATE/L=$LOCALITY/O=$ORGANIZATION CA/OU=$ORGANIZATIONAL_UNIT/CN=$ROOT_CN\" \
+             -days 800" \
+        "$CERTS_DIR/root/rootCA.crt"
 else
     echo "🔎 Detected cert for rootCA at $CERTS_DIR/root/rootCA.crt. Use -f option to override. Skipping..."
 fi
@@ -153,16 +197,16 @@ get_all_hosts() {
 # Function to gather all system hostnames + IPs (macOS + Linux)
 generate_server_cert_key() {
     server="$1"
-    echo "⏳ Generating $CERTS_DIR/servers/key for $server ..."
+    echo "⏳ Generating cert/key for $server ..."
     mkdir -p "$CERTS_DIR/servers/$server"
 
     # Create the certificate's key if it doesn't exist
     if [ $FORCE -eq 1 ] || [ ! -f "$CERTS_DIR/servers/$server/key.pem" ]; then
-        openssl genpkey -algorithm RSA \
-            -out "$CERTS_DIR/servers/$server/key.pem" \
-            -pkeyopt rsa_keygen_bits:4096 \
-            >/dev/null 2>&1
-        echo "    ✅ $CERTS_DIR/servers/$server/key.pem"
+        run_or_fail \
+            "openssl genpkey -algorithm RSA \
+                 -out \"$CERTS_DIR/servers/$server/key.pem\" \
+                 -pkeyopt rsa_keygen_bits:4096" \
+            "$CERTS_DIR/servers/$server/key.pem"
     else
         echo "    🔎 Detected key at $CERTS_DIR/servers/$server/key.pem. Use -f option to override. Skipping..."
     fi
@@ -170,10 +214,12 @@ generate_server_cert_key() {
     # Create the certificate if it doesn't exist
     if [ $FORCE -eq 1 ] || [ ! -f "$CERTS_DIR/servers/$server/cert.pem" ]; then
         # Generate the Certificate Signing Request (CSR)
-        openssl req -new \
-            -key "$CERTS_DIR/servers/$server/key.pem" \
-            -out "$CERTS_DIR/servers/$server.csr" \
-            -subj "/C=$COUNTRY/ST=$STATE/L=$LOCALITY/O=$ORGANIZATION certificate/OU=$ORGANIZATIONAL_UNIT/CN=$server"
+        run_or_fail \
+            "openssl req -new \
+                 -key \"$CERTS_DIR/servers/$server/key.pem\" \
+                 -out \"$CERTS_DIR/servers/$server.csr\" \
+                 -subj \"/C=$COUNTRY/ST=$STATE/L=$LOCALITY/O=$ORGANIZATION certificate/OU=$ORGANIZATIONAL_UNIT/CN=$server\"" \
+            "$CERTS_DIR/servers/$server.csr"
 
         # Configure extensions so browsers don't yell
         cat > "$CERTS_DIR/servers/$server.ext" << EOF
@@ -186,20 +232,19 @@ DNS.1 = $server
 EOF
 
         # Finally create the certificate for the server and sign it using CA
-        openssl x509 -req \
-            -in "$CERTS_DIR/servers/$server.csr" \
-            -CA "$CERTS_DIR/root/rootCA.crt" \
-            -CAkey "$CERTS_DIR/root/rootCA.key" \
-            -CAcreateserial \
-            -out "$CERTS_DIR/servers/$server/cert.pem" \
-            -days 825 -sha256 \
-            -extfile "$CERTS_DIR/servers/$server.ext" \
-            >/dev/null 2>&1
+        run_or_fail \
+            "openssl x509 -req \
+                 -in \"$CERTS_DIR/servers/$server.csr\" \
+                 -CA \"$CERTS_DIR/root/rootCA.crt\" \
+                 -CAkey \"$CERTS_DIR/root/rootCA.key\" \
+                 -CAcreateserial \
+                 -out \"$CERTS_DIR/servers/$server/cert.pem\" \
+                 -days 825 -sha256 \
+                 -extfile \"$CERTS_DIR/servers/$server.ext\"" \
+            "$CERTS_DIR/servers/$server/cert.pem"
 
-        # Remove unnecessary files: Certificate Signing Request (CSR).
+        # Remove unnecessary files: .csr, .ext, .srl.
         rm -f "$CERTS_DIR/servers/$server.csr" "$CERTS_DIR/servers/$server.ext" "$CERTS_DIR/root/rootCA.srl"
-
-        echo "    ✅ $CERTS_DIR/servers/$server/cert.pem"
     else
         echo "    🔎 Detected cert at $CERTS_DIR/servers/$server/cert.pem. Use -f option to override. Skipping..."
     fi
