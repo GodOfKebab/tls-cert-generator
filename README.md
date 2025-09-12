@@ -28,16 +28,18 @@ It works on **macOS** and **Linux**, and can run locally or in Docker.
 
     * `-f` – **force overwrite** existing keys/certs.
     * `-o <dir>` – specify the **output certs directory** (default `./certs`).
+* Automatically maintains a `.env` file with the current configuration.
 
 ---
 
 ## Configuration
 
 The script needs a set of certificate identity fields.
-You can provide them in three ways (priority order):
+You can provide them in four ways (priority order):
 1. CLI arguments (--country, --state, etc.)
-2. Environment variables (COUNTRY, STATE, etc.)
-3. Interactive prompt (script will ask if missing)
+2. Environment variables (COUNTRY, STATE, etc.) from the current shell
+3. Environment variables (COUNTRY, STATE, etc.) from the $CERTS/.env file (automatically generated from a previous run)
+4. Interactive prompt (script will ask if missing)
 
 ## Options
 
@@ -145,6 +147,7 @@ Enter ROOT_CN (Root CA Common Name) [tls-cert-generator@XX]:
 </details>
 
 Certificates will be created in `./certs`.
+A `.env` file will be written in `./certs/.env` with the chosen values.
 
 ---
 
