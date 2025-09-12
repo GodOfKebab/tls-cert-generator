@@ -3,8 +3,7 @@
 ![](https://badgen.net/docker/pulls/godofkebab/certificate-manager)
 ![](https://badgen.net/docker/size/godofkebab/certificate-manager)
 
-
-This repository provides a simple tool with Docker-support to generate TLS certificates for your system.  
+This repository provides a simple tool with Docker support to generate TLS certificates for your system.
 It automatically creates a self-signed **Root CA** and issues **server certificates** for hostnames and IP addresses you specify (or all addresses/hostnames discovered on the machine).
 It works on **macOS** and **Linux**, and can run locally or in Docker.
 
@@ -12,30 +11,41 @@ It works on **macOS** and **Linux**, and can run locally or in Docker.
 
 ## Features
 
-- Creates and stores a reusable Root CA in `certs/root/`.
-- Issues server certificates into `certs/servers/<name>/`.
-- Supports:
-   - Individual hostnames, IPs, or FQDNs.
-   - Bulk generation:
-      - `all` – all hostnames + IPv4 + IPv6 addresses.
-      - `all-hostname` – only system hostnames.
-      - `all-ipv4` – only system IPv4 addresses.
-      - `all-ipv6` – only system IPv6 addresses.
-- Works on **Linux** and **macOS** (LibreSSL-compatible).
-- Automatically uses host networking to detect system IPs when run via Docker on Linux.
+* Creates and stores a reusable Root CA in `certs/root/`.
+* Issues server certificates into `certs/servers/<name>/`.
+* Supports:
+
+    * Individual hostnames, IPs, or FQDNs.
+    * Bulk generation:
+
+        * `all` – all hostnames + IPv4 + IPv6 addresses.
+        * `all-hostname` – only system hostnames.
+        * `all-ipv4` – only system IPv4 addresses.
+        * `all-ipv6` – only system IPv6 addresses.
+* Works on **Linux** and **macOS** (LibreSSL-compatible).
+* Automatically uses host networking to detect system IPs when run via Docker on Linux.
+* Optional flags:
+
+    * `-f` – **force overwrite** existing keys/certs.
+    * `-o <dir>` – specify the **output certs directory** (default `./certs`).
 
 ---
 
-## Environment Variables
+## Environment Variables / CLI Arguments
 
-| Variable              | Description                                                                                       |
-|-----------------------|---------------------------------------------------------------------------------------------------|
-| `COUNTRY`             | 2-letter country code (e.g., `TR`)                                                                |
-| `STATE`               | State or province (e.g., `Istanbul`)                                                              |
-| `LOCALITY`            | City/locality (e.g., `Fatih`)                                                                     |
-| `ORGANIZATION`        | Organization name (e.g., `God Of Kebab Labs`)                                                     |
-| `ORGANIZATIONAL_UNIT` | Department/unit (e.g., `God Of Kebab's Guide to the WWW`)                                         |
-| `ROOT_CN`             | Common Name for the Root CA (e.g., `God Of Kebab Labs Root CA` or `certificate-manager@kebabnet`) |
+| Environment Variable / Arg         | Description                                                                                                      |
+|------------------------------------|------------------------------------------------------------------------------------------------------------------|
+| `-f`                               | **Optional:** Force overwrite existing keys/certs (default `false`)                                              |
+| `-o <dir>`                         | **Optional:** Output directory for certificates (default `./certs`)                                              |
+| `COUNTRY` / `-country`             | **TLS Field:** 2-letter country code (e.g., `TR`)                                                                |
+| `STATE` / `-state`                 | **TLS Field:** State or province (e.g., `Istanbul`)                                                              |
+| `LOCALITY` / `-locality`           | **TLS Field:** City/locality (e.g., `Fatih`)                                                                     |
+| `ORGANIZATION` / `-org`            | **TLS Field:** Organization name (e.g., `God Of Kebab Labs`)                                                     |
+| `ORGANIZATIONAL_UNIT` / `-orgunit` | **TLS Field:** Department/unit (e.g., `God Of Kebab's Guide to the WWW`)                                         |
+| `ROOT_CN` / `-rootcn`              | **TLS Field:** Common Name for the Root CA (e.g., `God Of Kebab Labs Root CA` or `certificate-manager@kebabnet`) |
+
+
+> All TLS fields must be provided either as environment variables or as CLI arguments. The script will error out if any field is missing from both sources.
 
 ---
 
@@ -55,7 +65,19 @@ export ORGANIZATION="God Of Kebab Labs"
 export ORGANIZATIONAL_UNIT="God Of Kebab's Guide to the WWW"
 export ROOT_CN="certificate-manager@kebabnet"
 
-curl -sSL https://raw.githubusercontent.com/GodOfKebab/certificate-manager/refs/heads/main/make-tls-certs.sh | sh -s all 1.2.3.4 example.com
+curl -sSL https://raw.githubusercontent.com/GodOfKebab/certificate-manager/refs/heads/main/make-tls-certs.sh | sh -s \
+all 1.2.3.4 example.com
+
+# OR use CLI arguments
+curl -sSL https://raw.githubusercontent.com/GodOfKebab/certificate-manager/refs/heads/main/make-tls-certs.sh | sh -s \
+-f -o another-certs-folder \
+--country "TR" \
+--state "Istanbul" \
+--locality "Fatih" \
+--org "God Of Kebab Labs" \
+--ou "God Of Kebab's Guide to the WWW" \
+--cn "certificate-manager@kebabnet" \
+all 1.2.3.4 example.com
 
 # OR save the file before running
 # curl https://raw.githubusercontent.com/GodOfKebab/certificate-manager/refs/heads/main/make-tls-certs.sh -o make-tls-certs.sh
@@ -82,35 +104,10 @@ docker run --rm \
   -e ORGANIZATIONAL_UNIT="God Of Kebab's Guide to the WWW" \
   -e ROOT_CN="certificate-manager@kebabnet" \
   godofkebab/certificate-manager \
-  all 1.2.3.4 example.com
-# Unable to find image 'godofkebab/certificate-manager:latest' locally
-# latest: Pulling from godofkebab/certificate-manager
-# 91e73aa2f352: Pull complete
-# c00e31457cc1: Pull complete
-# 37a0e844995d: Pull complete
-# Digest: sha256:...
-# Status: Downloaded newer image for godofkebab/certificate-manager:latest
-# Generating key for rootCA ...
-#     certs/root/rootCA.key
-#     Done.
-# Generating cert for rootCA ...
-#     certs/root/rootCA.crt
-#     Done.
-# Generating cert/key for XX.XX.XX.XX ...
-#     Generated key at certs/servers/XX.XX.XX.XX/key.pem
-#     Generated cert at certs/servers/XX.XX.XX.XX/cert.pem
-# tree $(pwd)/certs
-# └── certs
-#     ├── root
-#     │   ├── rootCA.crt
-#     │   └── rootCA.key
-#     └── servers
-#         └── XX.XX.XX.XX
-#             ├── cert.pem
-#             └── key.pem
+  all 1.2.3.4 example.com -f -o /app/certs
 ```
 
-Certificates will be written into `./certs`.
+Certificates will be written into `./certs` (or whatever you set with `-o`).
 
 ---
 
