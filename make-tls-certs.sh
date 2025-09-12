@@ -45,32 +45,40 @@ ORGANIZATION="${ARG_ORGANIZATION:-$ORGANIZATION}"
 ORGANIZATIONAL_UNIT="${ARG_ORG_UNIT:-$ORGANIZATIONAL_UNIT}"
 ROOT_CN="${ARG_ROOT_CN:-$ROOT_CN}"
 
-# Collect missing fields
-missing=""
-[ -z "$COUNTRY" ] && missing="$missing COUNTRY"
-[ -z "$STATE" ] && missing="$missing STATE"
-[ -z "$LOCALITY" ] && missing="$missing LOCALITY"
-[ -z "$ORGANIZATION" ] && missing="$missing ORGANIZATION"
-[ -z "$ORGANIZATIONAL_UNIT" ] && missing="$missing ORGANIZATIONAL_UNIT"
-[ -z "$ROOT_CN" ] && missing="$missing ROOT_CN"
+prompt_var() {
+    var_name=$1         # Name of the variable (e.g., COUNTRY)
+    default_value=$2    # Default value (e.g., XX)
+    description=$3      # Description text (e.g., "2-letter country code")
+
+    current_value=$(eval "echo \$$var_name")
+    # Only prompt if variable is empty/unset
+    if [ -z "$current_value" ]; then
+        printf "Enter %s (%s) [%s]: " "$var_name" "$description" "$default_value"
+        read input
+        # Use default if empty
+        eval "$var_name=\"\${input:-$default_value}\""
+    fi
+}
+
+# Prompt for certificate details only if not already set
+prompt_var COUNTRY             "XX"                     "2-letter country code"
+prompt_var STATE               "XX"                     "State or province"
+prompt_var LOCALITY            "XX"                     "City/locality"
+prompt_var ORGANIZATION        "XX"                     "Organization name"
+prompt_var ORGANIZATIONAL_UNIT "XX"                     "Department/unit"
+prompt_var ROOT_CN             "certificate-manager@XX" "Root CA Common Name"
 
 echo "✨  Welcome to certificate-manager!"
 echo "📋 Current configuration:"
 echo "   FORCE               (-f)         = ${FORCE}"
 echo "   CERTS_DIR           (-o)         = ${CERTS_DIR}"
-echo "   COUNTRY             (--country)  = ${COUNTRY:-<empty>}"
-echo "   STATE               (--state)    = ${STATE:-<empty>}"
-echo "   LOCALITY            (--locality) = ${LOCALITY:-<empty>}"
-echo "   ORGANIZATION        (--org)      = ${ORGANIZATION:-<empty>}"
-echo "   ORGANIZATIONAL_UNIT (--ou)       = ${ORGANIZATIONAL_UNIT:-<empty>}"
-echo "   ROOT_CN             (--cn)       = ${ROOT_CN:-<empty>}"
+echo "   COUNTRY             (--country)  = ${COUNTRY}"
+echo "   STATE               (--state)    = ${STATE}"
+echo "   LOCALITY            (--locality) = ${LOCALITY}"
+echo "   ORGANIZATION        (--org)      = ${ORGANIZATION}"
+echo "   ORGANIZATIONAL_UNIT (--ou)       = ${ORGANIZATIONAL_UNIT}"
+echo "   ROOT_CN             (--cn)       = ${ROOT_CN}"
 echo
-
-if [ -n "$missing" ]; then
-    echo "❌ Error: The following TLS subject fields are missing:$missing"
-    echo "➡️  Provide missing values via environment variables or CLI args."
-    exit 1
-fi
 
 # Detect OpenSSL flavor and set correct flag
 OPENSSL_REQ_NOENC_FLAG="-noenc"
