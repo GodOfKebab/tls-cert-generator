@@ -92,6 +92,58 @@ all 1.2.3.4 example.com
 # sh tls-cert-generator.sh all 1.2.3.4 example.com
 ```
 
+<details>
+<summary>Example Output</summary>
+
+```text
+Enter COUNTRY (2-letter country code) [XX]: 
+Enter STATE (State or province) [XX]: 
+Enter LOCALITY (City/locality) [XX]: 
+Enter ORGANIZATION (Organization name) [XX]: 
+Enter ORGANIZATIONAL_UNIT (Department/unit) [XX]: 
+Enter ROOT_CN (Root CA Common Name) [tls-cert-generator@XX]: 
+✨  Welcome to tls-cert-generator!
+📋 Current configuration:
+   FORCE               (-f)         = 1
+   CERTS_DIR           (-o)         = /Users/username/make-tls-certs
+   COUNTRY             (--country)  = XX
+   STATE               (--state)    = XX
+   LOCALITY            (--locality) = XX
+   ORGANIZATION        (--org)      = XX
+   ORGANIZATIONAL_UNIT (--ou)       = XX
+   ROOT_CN             (--cn)       = tls-cert-generator@XX
+
+⏳ Generating key for rootCA ...
+    ✅ Success: /Users/username/make-tls-certs/root/rootCA.key
+⏳ Generating cert for rootCA ...
+    ✅ Success: /Users/username/make-tls-certs/root/rootCA.crt
+⏳ Generating cert/key for HOSTNAME ...
+    ✅ Success: /Users/username/make-tls-certs/servers/HOSTNAME/key.pem
+    ✅ Success: /Users/username/make-tls-certs/servers/HOSTNAME.csr
+    ✅ Success: /Users/username/make-tls-certs/servers/HOSTNAME/cert.pem
+⏳ Generating cert/key for HOSTNAME.local ...
+    ✅ Success: /Users/username/make-tls-certs/servers/HOSTNAME.local/key.pem
+    ✅ Success: /Users/username/make-tls-certs/servers/HOSTNAME.local.csr
+    ✅ Success: /Users/username/make-tls-certs/servers/HOSTNAME.local/cert.pem
+⏳ Generating cert/key for HOSTNAME.local ...
+    ✅ Success: /Users/username/make-tls-certs/servers/HOSTNAME.local/key.pem
+    ✅ Success: /Users/username/make-tls-certs/servers/HOSTNAME.local.csr
+    ✅ Success: /Users/username/make-tls-certs/servers/HOSTNAME.local/cert.pem
+⏳ Generating cert/key for XX.XX.XX.XX ...
+    ✅ Success: /Users/username/make-tls-certs/servers/XX.XX.XX.XX/key.pem
+    ✅ Success: /Users/username/make-tls-certs/servers/XX.XX.XX.XX.csr
+    ✅ Success: /Users/username/make-tls-certs/servers/XX.XX.XX.XX/cert.pem
+⏳ Generating cert/key for 127.0.0.1 ...
+    ✅ Success: /Users/username/make-tls-certs/servers/127.0.0.1/key.pem
+    ✅ Success: /Users/username/make-tls-certs/servers/127.0.0.1.csr
+    ✅ Success: /Users/username/make-tls-certs/servers/127.0.0.1/cert.pem
+⏳ Generating cert/key for ::1 ...
+    ✅ Success: /Users/username/make-tls-certs/servers/::1/key.pem
+    ✅ Success: /Users/username/make-tls-certs/servers/::1.csr
+    ✅ Success: /Users/username/make-tls-certs/servers/::1/cert.pem
+```
+</details>
+
 Certificates will be created in `./certs`.
 
 ---
