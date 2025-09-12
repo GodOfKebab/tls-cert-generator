@@ -1,5 +1,77 @@
 #!/usr/bin/env sh
 
+set -e
+
+# Defaults
+FORCE=0
+CERTS_DIR="certs"
+
+# Subject fields (CLI args override ENV)
+ARG_COUNTRY=""
+ARG_STATE=""
+ARG_LOCALITY=""
+ARG_ORGANIZATION=""
+ARG_ORG_UNIT=""
+ARG_ROOT_CN=""
+
+usage() {
+  echo "Usage: $0 [-f] [-o certs_dir] [--country C] [--state S] [--locality L] [--org O] [--ou OU] [--cn CN] [servers...]"
+  exit 1
+}
+
+# Parse options
+while [ $# -gt 0 ]; do
+  case "$1" in
+    -f) FORCE=1; shift ;;
+    -o) CERTS_DIR="$2"; shift 2 ;;
+    --country) ARG_COUNTRY="$2"; shift 2 ;;
+    --state) ARG_STATE="$2"; shift 2 ;;
+    --locality) ARG_LOCALITY="$2"; shift 2 ;;
+    --org) ARG_ORGANIZATION="$2"; shift 2 ;;
+    --ou) ARG_ORG_UNIT="$2"; shift 2 ;;
+    --cn) ARG_ROOT_CN="$2"; shift 2 ;;
+    -h|--help) usage ;;
+    --) shift; break ;;
+    -*) echo "Unknown option: $1" >&2; usage ;;
+    *) break ;;
+  esac
+done
+
+# Final subject fields = CLI arg or ENV
+COUNTRY="${ARG_COUNTRY:-$COUNTRY}"
+STATE="${ARG_STATE:-$STATE}"
+LOCALITY="${ARG_LOCALITY:-$LOCALITY}"
+ORGANIZATION="${ARG_ORGANIZATION:-$ORGANIZATION}"
+ORGANIZATIONAL_UNIT="${ARG_ORG_UNIT:-$ORGANIZATIONAL_UNIT}"
+ROOT_CN="${ARG_ROOT_CN:-$ROOT_CN}"
+
+# Collect missing fields
+missing=""
+[ -z "$COUNTRY" ] && missing="$missing COUNTRY"
+[ -z "$STATE" ] && missing="$missing STATE"
+[ -z "$LOCALITY" ] && missing="$missing LOCALITY"
+[ -z "$ORGANIZATION" ] && missing="$missing ORGANIZATION"
+[ -z "$ORGANIZATIONAL_UNIT" ] && missing="$missing ORGANIZATIONAL_UNIT"
+[ -z "$ROOT_CN" ] && missing="$missing ROOT_CN"
+
+echo "✨  Welcome to certificate-manager!"
+echo "📋 Current configuration:"
+echo "   FORCE               (-f)         = ${FORCE}"
+echo "   CERTS_DIR           (-o)         = ${CERTS_DIR}"
+echo "   COUNTRY             (--country)  = ${COUNTRY:-<empty>}"
+echo "   STATE               (--state)    = ${STATE:-<empty>}"
+echo "   LOCALITY            (--locality) = ${LOCALITY:-<empty>}"
+echo "   ORGANIZATION        (--org)      = ${ORGANIZATION:-<empty>}"
+echo "   ORGANIZATIONAL_UNIT (--ou)       = ${ORGANIZATIONAL_UNIT:-<empty>}"
+echo "   ROOT_CN             (--cn)       = ${ROOT_CN:-<empty>}"
+echo
+
+if [ -n "$missing" ]; then
+    echo "❌ Error: The following TLS subject fields are missing:$missing"
+    echo "➡️  Provide missing values via environment variables or CLI args."
+    exit 1
+fi
+
 # Detect OpenSSL flavor and set correct flag
 OPENSSL_REQ_NOENC_FLAG="-noenc"
 if openssl version 2>/dev/null | grep -qi "LibreSSL"; then
@@ -7,47 +79,34 @@ if openssl version 2>/dev/null | grep -qi "LibreSSL"; then
     OPENSSL_REQ_NOENC_FLAG="-nodes"
 fi
 
-# If certs/root does NOT exist, create it
-if [ ! -d certs/root ]
-then
-    mkdir -p certs/root
-fi
+# Ensure root and servers directories
+mkdir -p "$CERTS_DIR/root"
 
-# Create a Root Certificate and self-sign it
-# If certs/rootCA.key does NOT exist, create it
-if [ ! -f certs/root/rootCA.key ]
-then
-    echo "Generating key for rootCA ..."
-    # Create the root key
-    openssl genrsa -out certs/root/rootCA.key 4096 >/dev/null 2>&1
-    echo "    certs/root/rootCA.key"
-    echo "    Done."
+# Root CA key
+if [ $FORCE -eq 1 ] || [ ! -f "$CERTS_DIR/root/rootCA.key" ]; then
+    echo "⏳ Generating key for rootCA ..."
+    openssl genrsa -out "$CERTS_DIR/root/rootCA.key" 4096 >/dev/null 2>&1
+    echo "    ✅ $CERTS_DIR/root/rootCA.key"
 else
-    echo "Detected key for rootCA at certs/root/rootCA.key. Skipping new key generation..."
+    echo "🔎 Detected key for rootCA at $CERTS_DIR/root/rootCA.key. Use -f option to override. Skipping..."
 fi
 
-# If certs/rootCA.crt does NOT exist, create it
-if [ ! -f certs/root/rootCA.crt ]
-then
-    echo "Generating cert for rootCA ..."
+# Root CA cert
+if [ $FORCE -eq 1 ] || [ ! -f "$CERTS_DIR/root/rootCA.crt" ]; then
+    echo "⏳ Generating cert for rootCA ..."
     # Generate the Root Certificate.
     openssl req -x509 -sha256 -new $OPENSSL_REQ_NOENC_FLAG \
-        -key certs/root/rootCA.key \
-        -out certs/root/rootCA.crt \
+        -key "$CERTS_DIR/root/rootCA.key" \
+        -out "$CERTS_DIR/root/rootCA.crt" \
         -subj "/C=$COUNTRY/ST=$STATE/L=$LOCALITY/O=$ORGANIZATION CA/OU=$ORGANIZATIONAL_UNIT/CN=$ROOT_CN" \
         -days 800 \
         >/dev/null 2>&1
-    echo "    certs/root/rootCA.crt"
-    echo "    Done."
+    echo "    ✅ $CERTS_DIR/root/rootCA.crt"
 else
-    echo "Detected cert for rootCA at certs/root/rootCA.crt. Skipping new cert generation..."
+    echo "🔎 Detected cert for rootCA at $CERTS_DIR/root/rootCA.crt. Use -f option to override. Skipping..."
 fi
 
-# If certs/servers does NOT exist, create it
-if [ ! -d certs/servers ]
-then
-    mkdir -p certs/servers
-fi
+mkdir -p "$CERTS_DIR/servers"
 
 # Function to gather all system hostnames + IPs (macOS + Linux)
 get_all_hosts_ipv4() {
@@ -87,38 +146,31 @@ get_all_hosts() {
 # Function to gather all system hostnames + IPs (macOS + Linux)
 generate_server_cert_key() {
     server="$1"
-    echo "Generating cert/key for $server ..."
-
-    # If certs/servers/$server does NOT exist, create it
-    if [ ! -d "certs/servers/$server" ]
-    then
-        mkdir "certs/servers/$server"
-    fi
+    echo "⏳ Generating $CERTS_DIR/servers/key for $server ..."
+    mkdir -p "$CERTS_DIR/servers/$server"
 
     # Create the certificate's key if it doesn't exist
-    if [ ! -f "certs/servers/$server/key.pem" ]
-    then
+    if [ $FORCE -eq 1 ] || [ ! -f "$CERTS_DIR/servers/$server/key.pem" ]; then
         openssl genpkey -algorithm RSA \
-            -out "certs/servers/$server/key.pem" \
+            -out "$CERTS_DIR/servers/$server/key.pem" \
             -pkeyopt rsa_keygen_bits:4096 \
             >/dev/null 2>&1
-        echo "    Generated key at certs/servers/$server/key.pem"
+        echo "    ✅ $CERTS_DIR/servers/$server/key.pem"
     else
-        echo "    Detected key at certs/servers/$server/key.pem. Skipping new key generation..."
+        echo "    🔎 Detected key at $CERTS_DIR/servers/$server/key.pem. Use -f option to override. Skipping..."
     fi
 
     # Create the certificate if it doesn't exist
-    if [ ! -f "certs/servers/$server/cert.pem" ]
-    then
+    if [ $FORCE -eq 1 ] || [ ! -f "$CERTS_DIR/servers/$server/cert.pem" ]; then
         # Generate the Certificate Signing Request (CSR)
         openssl req -new \
-            -key "certs/servers/$server/key.pem" \
-            -out "certs/servers/$server.csr" \
+            -key "$CERTS_DIR/servers/$server/key.pem" \
+            -out "$CERTS_DIR/servers/$server.csr" \
             -subj "/C=$COUNTRY/ST=$STATE/L=$LOCALITY/O=$ORGANIZATION certificate/OU=$ORGANIZATIONAL_UNIT/CN=$server" \
             >/dev/null 2>&1
 
         # Configure extensions so browsers don't yell
-        cat > "certs/servers/$server.ext" << EOF
+        cat > "$CERTS_DIR/servers/$server.ext" << EOF
 authorityKeyIdentifier=keyid,issuer
 basicConstraints=CA:FALSE
 keyUsage = digitalSignature, nonRepudiation, keyEncipherment, dataEncipherment
@@ -129,21 +181,21 @@ EOF
 
         # Finally create the certificate for the server and sign it using CA
         openssl x509 -req \
-            -in "certs/servers/$server.csr" \
-            -CA certs/root/rootCA.crt \
-            -CAkey certs/root/rootCA.key \
+            -in "$CERTS_DIR/servers/$server.csr" \
+            -CA "$CERTS_DIR/root/rootCA.crt" \
+            -CAkey "$CERTS_DIR/root/rootCA.key" \
             -CAcreateserial \
-            -out "certs/servers/$server/cert.pem" \
+            -out "$CERTS_DIR/servers/$server/cert.pem" \
             -days 825 -sha256 \
-            -extfile "certs/servers/$server.ext" \
+            -extfile "$CERTS_DIR/servers/$server.ext" \
             >/dev/null 2>&1
 
         # Remove unnecessary files: Certificate Signing Request (CSR).
-        rm "certs/servers/$server.csr" "certs/servers/$server.ext" "certs/root/rootCA.srl"
+        rm -f "$CERTS_DIR/servers/$server.csr" "$CERTS_DIR/servers/$server.ext" "$CERTS_DIR/root/rootCA.srl"
 
-        echo "    Generated cert at certs/servers/$server/cert.pem"
+        echo "    ✅ $CERTS_DIR/servers/$server/cert.pem"
     else
-        echo "    Detected cert at certs/servers/$server/cert.pem. Skipping new cert generation..."
+        echo "    🔎 Detected cert at $CERTS_DIR/servers/$server/cert.pem. Use -f option to override. Skipping..."
     fi
 }
 
@@ -168,6 +220,6 @@ do
             generate_server_cert_key "$h"
         done
     else
-        generate_server_cert_key $server
+        generate_server_cert_key "$server"
     fi
 done
