@@ -37,6 +37,22 @@ while [ $# -gt 0 ]; do
   esac
 done
 
+# Path to env file
+ENV_FILE="$CERTS_DIR/.env"
+
+# Ensure .env exists (create if missing)
+touch "$ENV_FILE"
+
+# Load defaults from .env if present
+if [ -f "$ENV_FILE" ]; then
+    # Only load if variable is unset
+    while IFS='=' read -r key value; do
+        # skip comments and empty lines
+        [ -z "$key" ] || [ "${key#\#}" != "$key" ] && continue
+        eval "export $key=\${$key:-$value}"
+    done < "$ENV_FILE"
+fi
+
 # Final subject fields = CLI arg or ENV
 COUNTRY="${ARG_COUNTRY:-$COUNTRY}"
 STATE="${ARG_STATE:-$STATE}"
@@ -79,6 +95,18 @@ echo "   ORGANIZATION        (--org)      = ${ORGANIZATION}"
 echo "   ORGANIZATIONAL_UNIT (--ou)       = ${ORGANIZATIONAL_UNIT}"
 echo "   ROOT_CN             (--cn)       = ${ROOT_CN}"
 echo
+
+# Update .env file with resolved values
+cat > "$ENV_FILE" <<EOF
+COUNTRY=$COUNTRY
+STATE=$STATE
+LOCALITY=$LOCALITY
+ORGANIZATION=$ORGANIZATION
+ORGANIZATIONAL_UNIT=$ORGANIZATIONAL_UNIT
+ROOT_CN=$ROOT_CN
+CERTS_DIR=$CERTS_DIR
+FORCE=$FORCE
+EOF
 
 # Detect OpenSSL / LibreSSL and choose the correct "no-encrypt" flag
 OPENSSL_REQ_NOENC_FLAG="-nodes"  # safe default for OpenSSL 1.1.x and LibreSSL
