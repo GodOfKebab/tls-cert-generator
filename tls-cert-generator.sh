@@ -98,13 +98,13 @@ echo
 
 # Update .env file with resolved values
 cat > "$ENV_FILE" <<EOF
-COUNTRY=$COUNTRY
-STATE=$STATE
-LOCALITY=$LOCALITY
-ORGANIZATION=$ORGANIZATION
-ORGANIZATIONAL_UNIT=$ORGANIZATIONAL_UNIT
-ROOT_CN=$ROOT_CN
-CERTS_DIR=$CERTS_DIR
+COUNTRY="$COUNTRY"
+STATE="$STATE"
+LOCALITY="$LOCALITY"
+ORGANIZATION="$ORGANIZATION"
+ORGANIZATIONAL_UNIT="$ORGANIZATIONAL_UNIT"
+ROOT_CN="$ROOT_CN"
+CERTS_DIR="$CERTS_DIR"
 FORCE=$FORCE
 EOF
 
@@ -174,13 +174,31 @@ fi
 # Root CA cert
 if [ $FORCE -eq 1 ] || [ ! -f "$CERTS_DIR/root/rootCA.crt" ]; then
     echo "⏳ Generating cert for rootCA ..."
+
+    # Create a temporary openssl config with v3_ca section
+    CA_CONF="$CERTS_DIR/root/rootCA.conf"
+    cat > "$CA_CONF" <<EOF
+[ req ]
+distinguished_name = dn
+x509_extensions = v3_ca
+
+[ dn ]
+
+[ v3_ca ]
+subjectKeyIdentifier = hash
+authorityKeyIdentifier = keyid:always,issuer
+basicConstraints = critical,CA:true
+keyUsage = critical,keyCertSign, cRLSign
+EOF
     run_or_fail \
         "openssl req -x509 -sha256 -new $OPENSSL_REQ_NOENC_FLAG \
              -key \"$CERTS_DIR/root/rootCA.key\" \
              -out \"$CERTS_DIR/root/rootCA.crt\" \
              -subj \"/C=$COUNTRY/ST=$STATE/L=$LOCALITY/O=$ORGANIZATION CA/OU=$ORGANIZATIONAL_UNIT/CN=$ROOT_CN\" \
-             -days 800" \
+             -days 3650 \
+             -config \"$CA_CONF\" -extensions v3_ca" \
         "$CERTS_DIR/root/rootCA.crt"
+    rm -f "$CA_CONF"
 else
     echo "🔎 Detected cert for rootCA at $CERTS_DIR/root/rootCA.crt. Use -f option to override. Skipping..."
 fi
@@ -250,13 +268,35 @@ generate_server_cert_key() {
             "$CERTS_DIR/servers/$server.csr"
 
         # Configure extensions so browsers don't yell
+        case "$server" in
+            *:* )  # contains a colon → IPv6
+                server_clean=$(printf '%s' "$server" | sed -e 's/^\[\(.*\)\]$/\1/' -e 's/%.*$//'); # extract zone from ipv6
+                dns_line=""
+                ip_line="IP.1 = $server_clean"
+                ;;
+            *.*.*.* )
+                # Could be IPv4 or DNS with dots, so check if it's digits+dots only
+                if printf '%s' "$server" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$'; then
+                    dns_line=""
+                    ip_line="IP.1 = $server"
+                else
+                    dns_line="DNS.1 = $server"
+                    ip_line=""
+                fi
+                ;;
+            * )
+                dns_line="DNS.1 = $server"
+                ip_line=""
+                ;;
+        esac
         cat > "$CERTS_DIR/servers/$server.ext" << EOF
 authorityKeyIdentifier=keyid,issuer
 basicConstraints=CA:FALSE
 keyUsage = digitalSignature, nonRepudiation, keyEncipherment, dataEncipherment
 subjectAltName = @alt_names
 [alt_names]
-DNS.1 = $server
+$dns_line
+$ip_line
 EOF
 
         # Finally create the certificate for the server and sign it using CA
@@ -267,7 +307,7 @@ EOF
                  -CAkey \"$CERTS_DIR/root/rootCA.key\" \
                  -CAcreateserial \
                  -out \"$CERTS_DIR/servers/$server/cert.pem\" \
-                 -days 825 -sha256 \
+                 -days 365 -sha256 \
                  -extfile \"$CERTS_DIR/servers/$server.ext\"" \
             "$CERTS_DIR/servers/$server/cert.pem"
 
