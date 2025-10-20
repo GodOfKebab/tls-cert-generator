@@ -1,11 +1,14 @@
-# tls-cert-generator: TLS Certificate Generator
+# tls-cert-generator: Self-Signed TLS Certificate Generator
 
-![](https://badgen.net/docker/pulls/godofkebab/tls-cert-generator)
-![](https://badgen.net/docker/size/godofkebab/tls-cert-generator)
+[![Docker](https://img.shields.io/docker/pulls/godofkebab/tls-cert-generator?logo=docker&color=%232496ED)](https://hub.docker.com/repository/docker/godofkebab/tls-cert-generator/tags)
+[![Docker](https://img.shields.io/docker/image-size/godofkebab/tls-cert-generator?logo=docker&color=%232496ED)](https://hub.docker.com/repository/docker/godofkebab/tls-cert-generator)
 
-This repository provides a simple tool with Docker support to generate TLS certificates for your system.
-It automatically creates a self-signed **Root CA** and issues **server certificates** for hostnames and IP addresses you specify (or all addresses/hostnames discovered on the machine).
-It works on **macOS** and **Linux**, and can run locally or in Docker.
+*No bloat. No complexity. Just one command.*
+
+✅ **Root CA + Server Certificates** — automatically generated  
+🎯 **Target specific hosts** or auto-discover all addresses  
+⚡ **Pure shell script** — only requires `openssl`  
+🐳 **macOS • Linux • Docker**
 
 ---
 
@@ -60,7 +63,7 @@ You can provide them in four ways (priority order):
 
 ## Ways to Run
 
-### 1. Zero-Setup runner (Recommended)
+### 1. Direct Execution (Recommended)
 
 Make sure you have **OpenSSL** installed (default on Linux/macOS).
 
@@ -155,7 +158,7 @@ A `.env` file will be written in `./certs/.env` with the chosen values.
 
 You can pull and run the prebuilt image without cloning the repo:
 
-Known issues: Dockerized method is not good at detecting the interfaces of your system (only matters if you run the commands like all, etc.).
+Known issues: Dockerized method is not good at detecting the interfaces of your host system (only matters if you run the commands like all, etc.).
 
 ```bash
 docker run --rm \
@@ -170,7 +173,7 @@ docker run --rm \
   all 1.2.3.4 example.com
 ```
 
-Certificates will be written into `./certs` (or whatever you set with `-o`).
+Certificates will be written into `./certs` (or wherever you set with `-o`).
 
 ---
 
@@ -178,7 +181,7 @@ Certificates will be written into `./certs` (or whatever you set with `-o`).
 
 Clone the repo, build the Docker image, and run it:
 
-Known issues: Dockerized method is not good at detecting the interfaces of your system (only matters if you run the commands like all, etc.).
+Known issues: Dockerized method is not good at detecting the interfaces of your host system (only matters if you run the commands like all, etc.).
 
 ```bash
 git clone https://github.com/GodOfKebab/tls-cert-generator.git
