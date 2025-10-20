@@ -7,7 +7,7 @@ on:
       - "v*.*.*"
 
 jobs:
-  docker:
+  release:
     runs-on: ubuntu-latest
 
     steps:
@@ -56,6 +56,5 @@ jobs:
         if: github.ref_type == 'tag'
         with:
           files: tls-cert-generator.sh
-          generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
