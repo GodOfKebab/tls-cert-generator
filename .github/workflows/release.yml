@@ -1,12 +1,10 @@
-name: Publish Docker image
+name: Release and Publish Docker image
 
 on:
   workflow_dispatch:
-    inputs:
-      image_tag:
-        description: "Docker image tag (e.g. v1.0.0)"
-        required: true
-        default: "v1.0.0"
+  push:
+    tags:
+      - "v*.*.*"
 
 jobs:
   docker:
@@ -15,6 +13,13 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Extract version from script
+        id: version
+        run: |
+          VERSION=$(grep '^VERSION=' tls-cert-generator.sh | cut -d'"' -f2)
+          echo "version=v$VERSION" >> $GITHUB_OUTPUT
+          echo "Extracted version: $VERSION"
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
@@ -34,7 +39,7 @@ jobs:
           push: true
           platforms: linux/amd64,linux/arm64,linux/arm/v7
           tags: |
-            ${{ secrets.DOCKERHUB_USERNAME }}/${{ github.event.repository.name }}:${{ github.event.inputs.image_tag }}
+            ${{ secrets.DOCKERHUB_USERNAME }}/${{ github.event.repository.name }}:${{ steps.version.outputs.version }}
             ${{ secrets.DOCKERHUB_USERNAME }}/${{ github.event.repository.name }}:latest
 
       - name: Update Docker Hub description
@@ -45,3 +50,12 @@ jobs:
           repository: ${{ secrets.DOCKERHUB_USERNAME }}/${{ github.event.repository.name }}
           short-description: ${{ github.event.repository.description }}
           readme-filepath: ./README.md
+
+      - name: Upload to GitHub Release
+        uses: softprops/action-gh-release@v2
+        if: github.ref_type == 'tag'
+        with:
+          files: tls-cert-generator.sh
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
