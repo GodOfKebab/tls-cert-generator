@@ -2,6 +2,9 @@
 
 set -e
 
+# Version
+VERSION="1.3.0"
+
 # Defaults
 FORCE=0
 CERTS_DIR="certs"
@@ -15,13 +18,39 @@ ARG_ORG_UNIT=""
 ARG_ROOT_CN=""
 
 usage() {
-  echo "Usage: $0 [-f] [-o certs_dir] [--country C] [--state S] [--locality L] [--org O] [--ou OU] [--cn CN] [servers...]"
+  cat << EOF
+Generate self-signed SSL certificates
+
+Usage: $0 [OPTIONS] <SERVERS>...
+
+Arguments:
+  <SERVERS>...  Server names or special values (all, all-ipv4, all-ipv6, all-hostname)
+
+Options:
+  -f                       Force overwrite existing certificates
+  -o <DIR>                 Output directory for certificates [default: certs]
+      --country <C>        Country field (2-letter country code)
+      --state <ST>         State or province field
+      --locality <L>       City or locality field
+      --org <O>            Organization name field
+      --ou <OU>            Organizational unit or department field
+      --cn <CN>            Common Name for root CA
+  -v, --version            Print version
+  -h, --help               Print help
+EOF
   exit 1
 }
+# Check if at least one server is specified
+if [ $# -eq 0 ]; then
+  echo "Error: At least one server or a special value (all, all-ipv4, all-ipv6, all-hostname) must be specified" >&2
+  echo ""
+  usage
+fi
 
 # Parse options
 while [ $# -gt 0 ]; do
   case "$1" in
+    -v|--version) echo "$(basename "$0") $VERSION"; exit 0 ;;
     -f) FORCE=1; shift ;;
     -o) CERTS_DIR="$2"; shift 2 ;;
     --country) ARG_COUNTRY="$2"; shift 2 ;;
