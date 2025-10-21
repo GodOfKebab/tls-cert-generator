@@ -97,7 +97,7 @@ all 1.2.3.4 example.com
 
 # OR save the file before running
 # wget https://github.com/GodOfKebab/tls-cert-generator/releases/latest/download/tls-cert-generator.sh -O tls-cert-generator.sh
-# mkdir certs && sh tls-cert-generator.sh all 1.2.3.4 example.com
+# sh tls-cert-generator.sh all 1.2.3.4 example.com
 ```
 
 <details>
