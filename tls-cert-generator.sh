@@ -70,6 +70,7 @@ done
 ENV_FILE="$CERTS_DIR/.env"
 
 # Ensure .env exists (create if missing)
+mkdir -p "$CERTS_DIR"
 touch "$ENV_FILE"
 
 # Load defaults from .env if present
@@ -237,7 +238,7 @@ mkdir -p "$CERTS_DIR/servers"
 # Function to gather all system hostnames + IPs (macOS + Linux)
 get_all_hosts_ipv4() {
     # Collect addresses (IPv4)
-    if command -v ip >/dev/null 2>&1; then
+    if which ip >/dev/null 2>&1; then
         ipv4_addrs="$(ip -o -4 addr show | awk '{print $4}' | cut -d/ -f1)"
     else
         ipv4_addrs="$(ifconfig | awk '/inet /{print $2}')"
@@ -247,7 +248,7 @@ get_all_hosts_ipv4() {
 
 get_all_hosts_ipv6() {
     # Collect addresses (IPv6)
-    if command -v ip >/dev/null 2>&1; then
+    if which ip >/dev/null 2>&1; then
         ipv6_addrs="$(ip -o -6 addr show | awk '{print $4}' | cut -d/ -f1)"
     else
         ipv6_addrs="$(ifconfig | awk '/inet6 /{print $2}')"
