@@ -1,7 +1,10 @@
 # tls-cert-generator: Self-Signed TLS Certificate Generator
 
+[![Release](https://img.shields.io/github/v/tag/godofkebab/tls-cert-generator?logo=github&label=latest%20tag&color=blue)](https://github.com/godofkebab/tls-cert-generator/releases/latest)
 [![Docker](https://img.shields.io/docker/pulls/godofkebab/tls-cert-generator?logo=docker&color=%232496ED)](https://hub.docker.com/repository/docker/godofkebab/tls-cert-generator/tags)
 [![Docker](https://img.shields.io/docker/image-size/godofkebab/tls-cert-generator?logo=docker&color=%232496ED)](https://hub.docker.com/repository/docker/godofkebab/tls-cert-generator)
+![Static Badge](https://img.shields.io/badge/Linux%20%7C%20macOS%20%20-%20black?label=platform)
+
 
 *No bloat. No complexity. Just one command.*
 
